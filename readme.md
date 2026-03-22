@@ -38,7 +38,7 @@ Interactive API docs: `http://localhost:8000/docs`
 ### Frontend
 
 ```bash
-cd frontend/frontend
+cd frontend
 npm install
 npm run dev
 ```

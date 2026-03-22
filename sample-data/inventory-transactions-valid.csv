@@ -1,4 +1,4 @@
 sku,warehouse,transaction_type,quantity,timestamp
-SKU-001,Jakarta,restock,5,2026-03-18T12:00:00
-SKU-002,Jakarta,sale,2,2026-03-18T12:30:00
-SKU-003,Bandung,adjustment,7,2026-03-18T13:00:00
+SKU-005,Surabaya,restock,20,2026-03-20T09:00:00
+SKU-006,Jakarta,sale,10,2026-03-20T09:30:00
+SKU-004,Makassar,adjustment,100,2026-03-20T10:00:00

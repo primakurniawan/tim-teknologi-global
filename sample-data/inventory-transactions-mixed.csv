@@ -1,8 +1,8 @@
 sku,warehouse,transaction_type,quantity,timestamp
-SKU-001,Jakarta,restock,5,2026-03-18T12:00:00
-SKU-002,Jakarta,sale,2,2026-03-18T12:30:00
-SKU-003,Bandung,adjustment,7,2026-03-18T13:00:00
-SKU-999,Jakarta,sale,1,2026-03-18T13:30:00
-SKU-002,Jakarta,invalid_type,1,2026-03-18T14:00:00
-SKU-001,Jakarta,sale,-3,2026-03-18T15:00:00
-SKU-001,Jakarta,sale,2,not-a-date
+SKU-001,Surabaya,restock,30,2026-03-20T08:00:00
+SKU-009,Jakarta,sale,15,2026-03-20T08:30:00
+SKU-001,Jakarta,sale,999,2026-03-20T09:00:00
+SKU-999,Jakarta,sale,1,2026-03-20T09:30:00
+SKU-006,Bandung,dispose,5,2026-03-20T10:00:00
+SKU-005,Surabaya,restock,-10,2026-03-20T10:30:00
+SKU-013,Jakarta,sale,5,not-a-date

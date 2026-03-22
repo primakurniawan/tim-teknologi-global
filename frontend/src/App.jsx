@@ -5,11 +5,15 @@ import CsvUpload from "./components/CsvUpload";
 import InventoryChart from "./components/InventoryChart";
 import Filters from "./components/Filters";
 import Pagination from "./components/Pagination";
+import { T } from "./theme";
 
-const defaultOptions = {
-  categories: [],
-  warehouses: [],
-  stock_statuses: [],
+const DEFAULT_STATE = {
+  search: "",
+  category: "",
+  warehouse: "",
+  stockStatus: "",
+  sortBy: "name",
+  sortOrder: "asc",
 };
 
 export default function App() {
@@ -17,144 +21,325 @@ export default function App() {
     items: [],
     total: 0,
     page: 1,
-    page_size: 10,
+    page_size: 20,
     total_pages: 1,
   });
-
   const [chartData, setChartData] = useState([]);
-  const [options, setOptions] = useState(defaultOptions);
+  const [options, setOptions] = useState({
+    categories: [],
+    warehouses: [],
+    stock_statuses: [],
+  });
+  const [loading, setLoading] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [warehouse, setWarehouse] = useState("");
-  const [stockStatus, setStockStatus] = useState("");
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  // Filter state
+  const [search, setSearch] = useState(DEFAULT_STATE.search);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [category, setCategory] = useState(DEFAULT_STATE.category);
+  const [warehouse, setWarehouse] = useState(DEFAULT_STATE.warehouse);
+  const [stockStatus, setStockStatus] = useState(DEFAULT_STATE.stockStatus);
+  const [sortBy, setSortBy] = useState(DEFAULT_STATE.sortBy);
+  const [sortOrder, setSortOrder] = useState(DEFAULT_STATE.sortOrder);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
-  const fetchInventory = async (pageOverride = page) => {
-    const response = await getInventory({
-      search,
+  // Debounce search — also resets page
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Main fetch effect — fires whenever any active filter or page changes
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getInventory({
+      search: debouncedSearch,
       category,
       warehouse,
       stock_status: stockStatus,
       sort_by: sortBy,
       sort_order: sortOrder,
-      page: pageOverride,
-      page_size: 5,
-    });
+      page,
+      page_size: pageSize,
+    })
+      .then((r) => {
+        if (active) setInventoryData(r.data);
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    debouncedSearch,
+    category,
+    warehouse,
+    stockStatus,
+    sortBy,
+    sortOrder,
+    page,
+    pageSize,
+  ]);
 
-    setInventoryData(response.data);
-  };
-
-  const fetchChartData = async () => {
-    const response = await getInsights();
-    setChartData(response.data);
-  };
-
-  const fetchOptions = async () => {
-    const response = await getFilterOptions();
-    setOptions(response.data);
-  };
-
+  // Load chart + filter options once
   useEffect(() => {
-    fetchInventory(1);
-    fetchChartData();
-    fetchOptions();
+    getInsights()
+      .then((r) => setChartData(r.data))
+      .catch(console.error);
+    getFilterOptions()
+      .then((r) => setOptions(r.data))
+      .catch(console.error);
   }, []);
 
-  const handleApplyFilters = () => {
+  // Dropdown filters reset to page 1
+  const handleSetCategory = (v) => {
+    setCategory(v);
     setPage(1);
-    fetchInventory(1);
+  };
+  const handleSetWarehouse = (v) => {
+    setWarehouse(v);
+    setPage(1);
+  };
+  const handleSetStockStatus = (v) => {
+    setStockStatus(v);
+    setPage(1);
   };
 
-  const handleResetFilters = () => {
+  // Column sort — reset to page 1
+  const handleSort = (col) => {
+    if (sortBy === col) {
+      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(col);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
+
+  // Reset all filters (keep pageSize)
+  const handleReset = () => {
     setSearch("");
+    setDebouncedSearch("");
     setCategory("");
     setWarehouse("");
     setStockStatus("");
-    setSortBy("name");
-    setSortOrder("asc");
+    setSortBy(DEFAULT_STATE.sortBy);
+    setSortOrder(DEFAULT_STATE.sortOrder);
     setPage(1);
-
-    setTimeout(() => {
-      fetchInventory(1);
-    }, 0);
   };
 
-  const handlePageChange = (nextPage) => {
-    setPage(nextPage);
-    fetchInventory(nextPage);
+  const handleUploadSuccess = () => {
+    getInsights()
+      .then((r) => setChartData(r.data))
+      .catch(console.error);
+    getFilterOptions()
+      .then((r) => setOptions(r.data))
+      .catch(console.error);
+    setPage(1);
   };
 
-  const handleUploadSuccess = async () => {
-    await fetchInventory(page);
-    await fetchChartData();
-    await fetchOptions();
+  const handlePageSizeChange = (v) => {
+    setPageSize(v);
+    setPage(1);
   };
+
+  const hasActiveFilters = search || category || warehouse || stockStatus;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <h1 style={styles.heading}>Inventory Dashboard</h1>
-          <p style={styles.subheading}>
-            Internal inventory management module with filtering, CSV import, and data insights.
-          </p>
-        </header>
+    <div
+      style={{
+        background: T.bgPage,
+        minHeight: "100vh",
+        fontFamily: T.fontBody,
+      }}
+    >
+      {/* ── Page Header ─────────────────────────────────────────── */}
+      <header style={s.header}>
+        <div style={s.headerInner}>
+          <h1 style={s.headerTitle}>Inventory Dashboard</h1>
+          <div style={s.headerStats}>
+            <div style={s.statPill}>
+              <span style={s.statNum}>{inventoryData.total}</span>
+              <span style={s.statLabel}>items</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-        <CsvUpload onUploadSuccess={handleUploadSuccess} />
+      {/* ── Main Content ─────────────────────────────────────────── */}
+      <main style={s.main}>
+        {/* Top row: CSV + Chart */}
+        <div style={s.topRow}>
+          <div style={{ flex: "0 0 340px", minWidth: 0 }}>
+            <CsvUpload onUploadSuccess={handleUploadSuccess} />
+          </div>
+          <div style={{ flex: 1, minWidth: 320 }}>
+            <InventoryChart data={chartData} />
+          </div>
+        </div>
 
-        <InventoryChart data={chartData} />
+        {/* Table card */}
+        <div style={s.tableCard}>
+          {/* Card header */}
+          <div style={s.tableCardHead}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h2 style={s.tableTitle}>Inventory List</h2>
+              {hasActiveFilters && <span style={s.filterBadge}>Filtered</span>}
+            </div>
+            <span style={s.tableCount}>
+              {inventoryData.total}{" "}
+              {inventoryData.total === 1 ? "item" : "items"}
+            </span>
+          </div>
 
-        <Filters
-          search={search}
-          setSearch={setSearch}
-          category={category}
-          setCategory={setCategory}
-          warehouse={warehouse}
-          setWarehouse={setWarehouse}
-          stockStatus={stockStatus}
-          setStockStatus={setStockStatus}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          options={options}
-          onApply={handleApplyFilters}
-          onReset={handleResetFilters}
-        />
+          {/* Filter bar */}
+          <div style={s.filterBar}>
+            <Filters
+              search={search}
+              setSearch={setSearch}
+              category={category}
+              setCategory={handleSetCategory}
+              warehouse={warehouse}
+              setWarehouse={handleSetWarehouse}
+              stockStatus={stockStatus}
+              setStockStatus={handleSetStockStatus}
+              options={options}
+              onReset={handleReset}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </div>
 
-        <InventoryTable data={inventoryData.items} />
+          {/* Table */}
+          <InventoryTable
+            data={inventoryData.items}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            loading={loading}
+          />
 
-        <Pagination
-          page={inventoryData.page}
-          totalPages={inventoryData.total_pages}
-          onPageChange={handlePageChange}
-        />
-      </div>
+          {/* Table footer: pagination + page size */}
+          <div style={s.tableFooter}>
+            <Pagination
+              page={inventoryData.page}
+              totalPages={inventoryData.total_pages}
+              total={inventoryData.total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f5f7fb",
-    padding: "24px",
-  },
-  container: {
-    maxWidth: "1200px",
-    margin: "0 auto",
-  },
+const s = {
   header: {
-    marginBottom: "20px",
+    background: T.bgHeader,
+    borderBottom: `1px solid #1F2937`,
+    padding: "0 24px",
   },
-  heading: {
-    marginBottom: "8px",
+  headerInner: {
+    maxWidth: 1280,
+    margin: "0 auto",
+    padding: "20px 0",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 16,
   },
-  subheading: {
-    marginTop: 0,
-    color: "#666",
+
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 600,
+    color: T.textOnDark,
+    letterSpacing: "-0.02em",
+  },
+
+  headerStats: {
+    paddingTop: 4,
+  },
+  statPill: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 0,
+  },
+  statNum: {
+    fontSize: 28,
+    fontWeight: 600,
+    color: "#A5B4FC",
+    lineHeight: 1,
+    fontFamily: T.fontMono,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
+  main: {
+    maxWidth: 1280,
+    margin: "0 auto",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+  },
+  topRow: {
+    display: "flex",
+    gap: 20,
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+  },
+  tableCard: {
+    background: T.bgCard,
+    borderRadius: T.radiusLg,
+    boxShadow: T.shadow,
+    overflow: "hidden",
+  },
+  tableCardHead: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 20px 12px",
+    borderBottom: `1px solid ${T.border}`,
+  },
+  tableTitle: {
+    fontSize: 16,
+    fontWeight: 600,
+    color: T.textPrimary,
+  },
+  filterBadge: {
+    fontSize: 11,
+    fontWeight: 500,
+    background: T.bgAccentLight,
+    color: T.accentText,
+    padding: "2px 8px",
+    borderRadius: 99,
+    border: `1px solid #C7D2FE`,
+  },
+  tableCount: {
+    fontSize: 13,
+    color: T.textTertiary,
+    fontFamily: T.fontMono,
+  },
+  filterBar: {
+    borderBottom: `1px solid ${T.border}`,
+    background: T.bgMuted,
+    padding: "12px 20px",
+  },
+  tableFooter: {
+    borderTop: `1px solid ${T.border}`,
+    background: T.bgMuted,
+    padding: "12px 20px",
   },
 };

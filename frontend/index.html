@@ -4,7 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Inventory Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'DM Sans', sans-serif;
+        background: #EEF2F7;
+        color: #0F172A;
+        -webkit-font-smoothing: antialiased;
+      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+      @keyframes slideLoad {
+        0%   { transform: translateX(-100%); }
+        60%  { transform: translateX(160%); }
+        100% { transform: translateX(160%); }
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      select:focus, input:focus { outline: 2px solid #A5B4FC; outline-offset: 1px; }
+      button:focus-visible { outline: 2px solid #A5B4FC; outline-offset: 2px; }
+      button:hover:not(:disabled) { opacity: 0.88; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

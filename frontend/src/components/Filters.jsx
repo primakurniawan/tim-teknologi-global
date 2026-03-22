@@ -1,121 +1,166 @@
+import { T } from "../theme";
+
 export default function Filters({
-  search,
-  setSearch,
-  category,
-  setCategory,
-  warehouse,
-  setWarehouse,
-  stockStatus,
-  setStockStatus,
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder,
-  options,
-  onApply,
-  onReset,
+  search, setSearch,
+  category, setCategory,
+  warehouse, setWarehouse,
+  stockStatus, setStockStatus,
+  options, onReset, hasActiveFilters,
 }) {
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.grid}>
+    <div style={s.row}>
+      {/* Search */}
+      <div style={s.searchWrap}>
+        <svg style={s.searchIcon} width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" stroke={T.textTertiary} strokeWidth="2"/>
+          <path d="m20 20-3-3" stroke={T.textTertiary} strokeWidth="2" strokeLinecap="round"/>
+        </svg>
         <input
-          style={styles.input}
+          style={s.searchInput}
           type="text"
-          placeholder="Search by name or SKU"
+          placeholder="Search name or SKU…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
         />
-
-        <select style={styles.input} value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All Categories</option>
-          {options.categories.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-
-        <select style={styles.input} value={warehouse} onChange={(e) => setWarehouse(e.target.value)}>
-          <option value="">All Warehouses</option>
-          {options.warehouses.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-
-        <select
-          style={styles.input}
-          value={stockStatus}
-          onChange={(e) => setStockStatus(e.target.value)}
-        >
-          <option value="">All Stock Statuses</option>
-          {options.stock_statuses.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-
-        <select style={styles.input} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="name">Sort by Name</option>
-          <option value="quantity">Sort by Quantity</option>
-          <option value="last_updated">Sort by Last Updated</option>
-        </select>
-
-        <select style={styles.input} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
+        {search && (
+          <button style={s.clearBtn} onClick={() => setSearch("")} title="Clear">✕</button>
+        )}
       </div>
 
-      <div style={styles.actions}>
-        <button style={styles.button} onClick={onApply}>
-          Apply
-        </button>
-        <button style={styles.secondaryButton} onClick={onReset}>
+      {/* Dropdowns */}
+      <Select value={category} onChange={setCategory} label="Category">
+        <option value="">All Categories</option>
+        {options.categories.map(c => <option key={c} value={c}>{c}</option>)}
+      </Select>
+
+      <Select value={warehouse} onChange={setWarehouse} label="Warehouse">
+        <option value="">All Warehouses</option>
+        {options.warehouses.map(w => <option key={w} value={w}>{w}</option>)}
+      </Select>
+
+      <Select value={stockStatus} onChange={setStockStatus} label="Stock Status">
+        <option value="">All Statuses</option>
+        {options.stock_statuses.map(s => <option key={s} value={s}>{s}</option>)}
+      </Select>
+
+      {/* Reset */}
+      {hasActiveFilters && (
+        <button style={s.resetBtn} onClick={onReset}>
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           Reset
         </button>
-      </div>
+      )}
     </div>
   );
 }
 
-const styles = {
-  wrapper: {
-    marginBottom: "20px",
-    padding: "16px",
-    border: "1px solid #ddd",
-    borderRadius: "12px",
-    background: "#fafafa",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  input: {
-    padding: "10px 12px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-  },
-  actions: {
+function Select({ value, onChange, children }) {
+  const active = !!value;
+  return (
+    <div style={s.selectWrap}>
+      <select
+        style={{ ...s.select, ...(active ? s.selectActive : {}) }}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      >
+        {children}
+      </select>
+      <svg style={s.chevron} width="12" height="12" fill="none" viewBox="0 0 24 24">
+        <path d="m6 9 6 6 6-6" stroke={active ? T.accent : T.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
+const s = {
+  row: {
     display: "flex",
-    gap: "8px",
+    flexWrap: "wrap",
+    gap: 8,
+    alignItems: "center",
   },
-  button: {
-    padding: "10px 14px",
-    borderRadius: "8px",
+  searchWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    flex: "1 1 220px",
+    minWidth: 180,
+    maxWidth: 300,
+  },
+  searchIcon: {
+    position: "absolute",
+    left: 10,
+    pointerEvents: "none",
+    flexShrink: 0,
+  },
+  searchInput: {
+    width: "100%",
+    padding: "8px 32px 8px 34px",
+    borderRadius: T.radius,
+    border: `1px solid ${T.border}`,
+    fontSize: 13,
+    fontFamily: T.fontBody,
+    color: T.textPrimary,
+    background: T.bgCard,
+    outline: "none",
+    transition: "border-color 0.15s",
+  },
+  clearBtn: {
+    position: "absolute",
+    right: 8,
+    background: "none",
     border: "none",
     cursor: "pointer",
+    color: T.textTertiary,
+    fontSize: 12,
+    padding: "2px 4px",
+    lineHeight: 1,
   },
-  secondaryButton: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    background: "white",
+  selectWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  select: {
+    appearance: "none",
+    padding: "8px 30px 8px 12px",
+    borderRadius: T.radius,
+    border: `1px solid ${T.border}`,
+    fontSize: 13,
+    fontFamily: T.fontBody,
+    color: T.textSecondary,
+    background: T.bgCard,
     cursor: "pointer",
+    outline: "none",
+    minWidth: 140,
+  },
+  selectActive: {
+    border: `1px solid ${T.borderFocus}`,
+    background: T.bgAccentLight,
+    color: T.accentText,
+    fontWeight: 500,
+  },
+  chevron: {
+    position: "absolute",
+    right: 8,
+    pointerEvents: "none",
+  },
+  resetBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "8px 12px",
+    borderRadius: T.radius,
+    border: `1px solid ${T.border}`,
+    background: T.bgCard,
+    fontSize: 13,
+    fontFamily: T.fontBody,
+    color: T.textSecondary,
+    cursor: "pointer",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
   },
 };
